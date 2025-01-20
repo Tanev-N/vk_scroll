@@ -13,6 +13,13 @@
   display: flex;
   gap: 16px;
   z-index: 1;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.sortControls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
 }
 
 .loader {

@@ -5,13 +5,13 @@ import { repositoriesStore } from '../../stores/RepositoriesStore';
 import { searchRepositories } from '../../services/api';
 import { Repository } from '../../types';
 import styles from './RepositoryList.module.css';
-import { GithubOutlined, StarOutlined, ForkOutlined } from '@ant-design/icons';
+import { GithubOutlined, StarOutlined, ForkOutlined, SortAscendingOutlined, SortDescendingOutlined } from '@ant-design/icons';
 
 const RepositoryList: FC = observer(() => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [searchQuery, setSearchQuery] = useState('javascript');
   const [sort, setSort] = useState('stars');
-  const [order, setOrder] = useState<'desc' | 'asc'>('desc');
+  const [sortDirection, setSortDirection] = useState<'desc' | 'asc'>('desc');
   const [editingRepo, setEditingRepo] = useState<Repository | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,7 +25,7 @@ const RepositoryList: FC = observer(() => {
         searchQuery,
         repositoriesStore.page,
         sort,
-        order
+        sortDirection
       );
 
       if (repositoriesStore.page === 1) {
@@ -43,7 +43,7 @@ const RepositoryList: FC = observer(() => {
     } finally {
       repositoriesStore.setLoading(false);
     }
-  }, [searchQuery, sort, order]);
+  }, [searchQuery, sort, sortDirection]);
 
   useEffect(() => {
     loadRepositories();
@@ -59,22 +59,20 @@ const RepositoryList: FC = observer(() => {
   }, [loadRepositories]);
 
   const handleSearch = useCallback(() => {
-    repositoriesStore.page = 1;
-    repositoriesStore.setRepositories([]);
+    repositoriesStore.resetPagination();
     loadRepositories();
   }, [loadRepositories]);
 
   const handleSortChange = useCallback((value: string) => {
     setSort(value);
-    repositoriesStore.page = 1;
-    repositoriesStore.setRepositories([]);
+    repositoriesStore.resetPagination();
     loadRepositories();
   }, [loadRepositories]);
 
-  const handleOrderChange = useCallback((value: 'desc' | 'asc') => {
-    setOrder(value);
-    repositoriesStore.page = 1;
-    repositoriesStore.setRepositories([]);
+  const handleSortDirectionChange = useCallback(() => {
+    const newDirection = sortDirection === 'desc' ? 'asc' : 'desc';
+    setSortDirection(newDirection);
+    repositoriesStore.resetPagination();
     loadRepositories();
   }, [loadRepositories]);
 
@@ -103,16 +101,12 @@ const RepositoryList: FC = observer(() => {
     }
   };
 
-  const renderSortValue = (repo: Repository) => {
-    switch (sort) {
-      case 'forks':
-        return `Forks: ${repo.forks_count}`;
-      case 'updated':
-        return `Updated: ${new Date(repo.updated_at).toLocaleDateString()}`;
-      default:
-        return `Stars: ${repo.stargazers_count}`;
-    }
-  };
+
+  const sortOptions = [
+    { value: 'stars', label: 'Stars' },
+    { value: 'forks', label: 'Forks' },
+    { value: 'updated', label: 'Updated' },
+  ];
 
   return (
     <div 
@@ -128,23 +122,22 @@ const RepositoryList: FC = observer(() => {
           onSearch={handleSearch}
           enterButton
         />
-        <Select
-          value={sort}
-          onChange={handleSortChange}
-          options={[
-            { value: 'stars', label: 'Stars' },
-            { value: 'forks', label: 'Forks' },
-            { value: 'updated', label: 'Updated' },
-          ]}
-        />
-        <Select
-          value={order}
-          onChange={handleOrderChange}
-          options={[
-            { value: 'desc', label: 'Descending' },
-            { value: 'asc', label: 'Ascending' },
-          ]}
-        />
+        <div className={styles.sortControls}>
+          <Select
+            value={sort}
+            onChange={handleSortChange}
+            options={sortOptions}
+            style={{ width: 120 }}
+          />
+          <Button
+            type={sortDirection === 'desc' ? 'primary' : 'default'}
+            icon={sortDirection === 'desc' ? <SortDescendingOutlined /> : <SortAscendingOutlined />}
+            onClick={handleSortDirectionChange}
+            title={sortDirection === 'desc' ? 'По убыванию' : 'По возрастанию'}
+          >
+            {sortDirection === 'desc' ? 'По убыванию' : 'По возрастанию'}
+          </Button>
+        </div>
       </div>
 
       <List
